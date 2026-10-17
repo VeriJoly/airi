@@ -52,6 +52,19 @@ jobs:
           WARP_DRIVE_PUBLIC_BASE: ${{ secrets.WARP_DRIVE_PUBLIC_BASE }}
           VITE_ENABLE_ANALYTICS: 'false'
 
+      - name: Exclude assets exceeding Cloudflare's per-file limit
+        shell: bash
+        run: |
+          cd ./apps/stage-web/dist
+          find . -type f -size +25M -printf '%P\n' > .assetsignore
+          if [ -s .assetsignore ]; then
+            echo "These files exceed Cloudflare Workers' 25 MiB asset limit and will not be deployed:"
+            cat .assetsignore
+          else
+            rm .assetsignore
+            echo "No oversized assets found."
+          fi
+
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v4
         with:
